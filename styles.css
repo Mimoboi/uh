@@ -1,0 +1,340 @@
+:root {
+  --bg: #000000;
+  --fg: #f5f5f5;
+  --muted: #9a9a9a;
+
+  --glow-a: #7c3aed;
+  --glow-b: #06b6d4;
+  --glow-c: #f472b6;
+  --glow-d: #facc15;
+
+  --speed: 4s;
+  --blur: 24px;
+  --angle: 0deg;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.edges {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.play-btn {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  padding: 8px 14px;
+  border: 1px solid #ec4899;
+  background: rgba(0,0,0,0.6);
+  color: #f5f5f5;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.edges path {
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+  transition: opacity 0.8s ease, x1 0.05s, y1 0.05s, x2 0.05s, y2 0.05s;
+}
+
+/* Idle bounce on the diamond. */
+.node .diamond {
+  animation: diamondEnter 0.6s ease-out, diamondIdle 2s ease-in-out 0.6s infinite;
+}
+
+@keyframes diamondEnter {
+  from { opacity: 0; transform: rotate(45deg) scale(0); }
+  to { opacity: 0.9; transform: rotate(45deg) scale(1); }
+}
+
+@keyframes diamondIdle {
+  0%, 100% { transform: rotate(45deg) scale(1); }
+  50% { transform: rotate(45deg) scale(1.12); }
+}
+
+/* Bounce when reaching an edge. */
+.node.bounce .diamond {
+  animation: diamondBounce 0.4s ease;
+}
+
+@keyframes diamondBounce {
+  0% { transform: rotate(45deg) scale(1); }
+  50% { transform: rotate(45deg) scale(1.5); }
+  100% { transform: rotate(45deg) scale(1); }
+}
+
+/* Bright/dim pulse on the edge light. */
+.edge-light {
+  animation: spin var(--speed) linear infinite, edgePulse 2.6s ease-in-out infinite, edgeEnter 0.8s ease-out;
+}
+
+@keyframes edgeEnter {
+  from { opacity: 0; }
+  to { opacity: 0.95; }
+}
+
+@keyframes edgePulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
+}
+
+/* ---------- glass fog ---------- */
+.fog { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
+#fogA {
+  -webkit-backdrop-filter: blur(7px) saturate(1.05);
+  backdrop-filter: blur(7px) saturate(1.05);
+  background-color: rgba(225, 236, 246, .10);
+}
+#fogB {
+  -webkit-backdrop-filter: blur(18px) brightness(1.08);
+  backdrop-filter: blur(18px) brightness(1.08);
+  background-color: rgba(228, 238, 248, .20);
+}
+
+/* Spinning ambient light hugging the whole viewport edges. */
+.edge-light {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    #fce7f3 30deg,
+    #ec4899 180deg,
+    transparent 330deg
+  );
+  filter: blur(var(--blur)) drop-shadow(0 0 24px rgba(236, 72, 153, 0.9));
+  /* Rectangular ring mask (box layout): glow along the rectangular border. */
+  -webkit-mask-image:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000);
+  -webkit-mask-position: center, center;
+  -webkit-mask-size: 100% 100%, calc(100% - 28px) calc(100% - 28px);
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  -webkit-mask-composite: source-out;
+  mask-image:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000);
+  mask-position: center, center;
+  mask-size: 100% 100%, calc(100% - 28px) calc(100% - 28px);
+  mask-repeat: no-repeat, no-repeat;
+  mask-composite: subtract;
+  animation: spin var(--speed) linear infinite;
+  opacity: 0.95;
+}
+
+.node {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  animation: nodeAppear 0.5s ease-out;
+}
+
+@keyframes nodeAppear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  60% { transform: translate(-50%, -50%) scale(1.25); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.node .diamond {
+  width: 14px;
+  height: 14px;
+  background: #ec4899;
+  transform: rotate(45deg);
+  box-shadow: 0 0 18px 4px rgba(236, 72, 153, 0.7);
+  opacity: 0.9;
+  animation: diamondPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes diamondPulse {
+  0%, 100% { transform: rotate(45deg) scale(1); box-shadow: 0 0 18px 4px rgba(236,72,153,0.7); }
+  50% { transform: rotate(45deg) scale(1.15); box-shadow: 0 0 28px 8px rgba(236,72,153,0.9); }
+}
+
+.node .label {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
+}
+
+.node:active {
+  cursor: grabbing;
+}
+
+.node.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.node.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.6s ease;
+}
+
+.node .diamond {
+  width: 14px;
+  height: 14px;
+  background: #ec4899;
+  transform: rotate(45deg);
+  box-shadow: 0 0 18px 4px rgba(236, 72, 153, 0.55);
+  opacity: 0.9;
+}
+
+.node .label {
+  margin: 0 0 0;
+  padding: 0;
+  line-height: 1;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+}
+
+@keyframes spin {
+  to {
+    --angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-light {
+    animation: none;
+  }
+}
+
+/* ===== v2: static edge glow ===== */
+.edge-light {
+  background: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+  filter: none;
+  opacity: 1;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 175, 220, 0.95),
+    inset 0 0 14px 2px rgba(236, 72, 153, 0.75),
+    inset 0 0 50px 8px rgba(236, 72, 153, 0.4),
+    inset 0 0 120px 20px rgba(236, 72, 153, 0.18);
+  animation: edgeBreathe 5s ease-in-out infinite;
+}
+@keyframes edgeBreathe {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* ===== v2: star nodes ===== */
+.node {
+  display: block;
+  width: 16px;
+  height: 16px;
+  transition: opacity 1.2s ease;
+}
+.node .star {
+  width: 16px;
+  height: 16px;
+  background: #ffd9ec;
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  filter: drop-shadow(0 0 6px #ec4899);
+  transition: transform 0.35s ease;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.node.current .star { transform: scale(1.8); }
+@keyframes twinkle {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+.node .label {
+  position: absolute;
+  left: 18px;
+  top: 8px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: rgba(245, 245, 245, 0.7);
+  text-shadow: 0 0 6px rgba(236, 72, 153, 0.5);
+  transition: color 0.3s ease, font-size 0.3s ease;
+}
+.node.current .label {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+/* ===== v3: spinning stripe on top of the static glow ===== */
+.edge-light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    #fce7f3 25deg,
+    #ec4899 70deg,
+    transparent 120deg,
+    transparent 360deg
+  );
+  filter: blur(6px) drop-shadow(0 0 14px rgba(236, 72, 153, 0.9));
+  -webkit-mask-image:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000);
+  -webkit-mask-position: center, center;
+  -webkit-mask-size: 100% 100%, calc(100% - 16px) calc(100% - 16px);
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  -webkit-mask-composite: source-out;
+  mask-image:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000);
+  mask-position: center, center;
+  mask-size: 100% 100%, calc(100% - 16px) calc(100% - 16px);
+  mask-repeat: no-repeat, no-repeat;
+  mask-composite: subtract;
+  animation: spin var(--speed) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-light::after { animation: none; }
+}
